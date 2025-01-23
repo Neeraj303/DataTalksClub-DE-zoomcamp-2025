@@ -1,4 +1,4 @@
-## [DataTalksClub Data Engineering Zoomcamp 2025](https://github.com/DataTalksClub/data-engineering-zoomcamp/tree/main)
+# [DataTalksClub Data Engineering Zoomcamp 2025](https://github.com/DataTalksClub/data-engineering-zoomcamp/tree/main)
 
 ### [Homework Cohort 2025](https://github.com/DataTalksClub/data-engineering-zoomcamp/tree/main/cohorts/2025)
 
