@@ -693,4 +693,40 @@ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashi
 sudo apt update && sudo apt install terraform
 
 cd 1_terraform_gcp/
+
+# to transfer your my-cred.json file to VM. run these commands on local machine
+cd DataTalksClub-DE-zoomcamp-2025/week_1/terrademo/keys
+sftp de-zoomcamp
+cd DataTalksClub-DE-zoomcamp-2025/week_1/terrademo/keys # go to this folder on remote
+put my-creds.json . # this is key for the google service account
+
+export GOOGLE_APPLICATION_CREDENTIALS=/home/texnh/DataTalksClub-DE-zoomcamp-2025/week_1/terrademo/keys/my-creds.json
+
+# Now to authenticate
+gcloud auth activate-service-account --key-file $GOOGLE_APPLICATION_CREDENTIALS
+# Activate service account message
+
+## to activate terraform and upload in in GCP Clud storage bucket, and in BigQuery
+terraform init
+
+terraform plan
+
+terraform apply
+```
+
+To stop the GCP VM instance directly from terminal on VM machine rather than going to GCP cloud website
+
+```
+sudo shutdown now
+```
+
+**Imp Notice**
+When close the VM instance it would make a new external IP. so update the config file in ~/.ssh/config file on you local pc. And you would also need to transfer the gcp.pub key to new assigned VM following below commands. Assume my new external ip:34.47.171.149
+
+```bash
+## to transfer the key from local system 
+ssh -i ~/.ssh/gcp texnh@34.47.171.149
+
+## to connect 
+ssh de-zoomcamp
 ```
