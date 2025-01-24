@@ -1,4 +1,5 @@
-## [Week 1 Official Github](https://github.com/DataTalksClub/data-engineering-zoomcamp/tree/main/01-docker-terraform): Docker-Terraform | [Homework 1](homework.md) | [HW1 Solution]()
+
+## [Week 1 Official Github                        ](https://github.com/DataTalksClub/data-engineering-zoomcamp/tree/main/01-docker-terraform): Docker-Terraform | [Homework 1](homework.md) | [HW1 Solution]()
 
 ### [Video 1: Intro to Docker](https://youtu.be/EYNwNlOrpr0&list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb&index=4)
 
@@ -8,9 +9,9 @@ Docker: Delivers software in **containers** and container are **isolated** from 
 
 Benefites of Docker:
 - Reproducibility
-- Local Experimentation
+- Local Experimentation                                                                                                                                                                                         
 - Integration tests (CI/CD) (we use github action, jenkins)
-- Running pipelines on the cloud
+- Running pipelines on the cloud                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              
 - Spark
 - Serverless: Concept for processing data, one record at a time. (AWS Lambda, Google Cloud Functions)
 
@@ -205,11 +206,426 @@ wget https://github.com/DataTalksClub/nyc-tlc-data/releases/download/misc/taxi_z
 Check the upload-data.ipynb for uploading the data to postgres. 
 
 ```SQL
+
+---------------------------------- SQL Refresher ----------------------------------
 -- To count the nnmber of rows in the table
 SELECT COUNT(1) FROM zones
 
 -- To check the first 5 rows
 SELECT * FROM zones LIMIT 5
+SELECT * FROM yellow_taxi_rides LIMIT 5;
+
+-- See data without joining
+SELECT
+    tpep_pickup_datetime,
+    tpep_dropoff_datetime,
+    total_amount,
+    CONCAT(zpu."Borough", ' | ', zpu."Zone") AS "pickup_loc",
+    CONCAT(zdo."Borough", ' | ', zdo."Zone") AS "dropff_loc"
+FROM 
+    yellow_taxi_trips t,
+    zones zpu,
+    zones zdo
+WHERE
+    t."PULocationID" = zpu."LocationID"
+    AND t."DOLocationID" = zdo."LocationID"
+LIMIT 100;
+
+-- Use JOIN to check multiple tables
+SELECT
+    tpep_pickup_datetime,
+    tpep_dropoff_datetime,
+    total_amount,
+    CONCAT(zpu."Borough", ' | ', zpu."Zone") AS "pickup_loc",
+    CONCAT(zdo."Borough", ' | ', zdo."Zone") AS "dropff_loc"
+FROM yellow_taxi_trips t
+JOIN zones zpu -- when writing JOIN by default states that we want to use an INNER JOIN
+	ON t."PULocationID" = zpu."LocationID"
+JOIN zones zdo
+	ON t."DOLocationID" = zdo."LocationID"
+LIMIT 100;
+
+-- check for NULL entries
+SELECT
+    tpep_pickup_datetime,
+    tpep_dropoff_datetime,
+    total_amount,
+    "PULocationID",
+    "DOLocationID"
+FROM 
+    yellow_taxi_trips 
+WHERE
+    "PULocationID" IS NULL
+    OR "DOLocationID" IS NULL
+LIMIT 100;
+
+-- Subquery to check LocationIDs in the Zones table not in yellow_taxi_trips
+SELECT
+    tpep_pickup_datetime,
+    tpep_dropoff_datetime,
+    total_amount,
+    "PULocationID",
+    "DOLocationID"
+FROM 
+    yellow_taxi_trips 
+WHERE
+    "DOLocationID" NOT IN (SELECT "LocationID" from zones)
+    OR "PULocationID" NOT IN (SELECT "LocationID" from zones)
+LIMIT 100;
+
+-- Using Left JOIN
+DELETE FROM zones WHERE "LocationID" = 142;
+
+SELECT
+    tpep_pickup_datetime,
+    tpep_dropoff_datetime,
+    total_amount,
+    CONCAT(zpu."Borough", ' | ', zpu."Zone") AS "pickup_loc",
+    CONCAT(zdo."Borough", ' | ', zdo."Zone") AS "dropff_loc"
+FROM 
+    yellow_taxi_trips t
+LEFT JOIN 
+    zones zpu ON t."PULocationID" = zpu."LocationID"
+JOIN
+    zones zdo ON t."DOLocationID" = zdo."LocationID"
+LIMIT 100;
+
+-- Number of Trips per day and ordering by day
+SELECT
+    CAST(tpep_dropoff_datetime AS DATE) AS "day",
+    COUNT(1)
+FROM 
+    yellow_taxi_trips 
+GROUP BY
+    CAST(tpep_dropoff_datetime AS DATE)
+ORDER BY 1 ASC
+
+-- To check day with largest number of records/rides
+SELECT
+    CAST(tpep_dropoff_datetime AS DATE) AS "day",
+    COUNT(1)
+FROM 
+    yellow_taxi_trips 
+GROUP BY
+    CAST(tpep_dropoff_datetime AS DATE)
+ORDER BY 2 DESC
+LIMIT 1;
+
+-- Max amount of money a driver made for different day
+SELECT
+    CAST(tpep_dropoff_datetime AS DATE) AS "day",
+    COUNT(1),
+	MAX(total_amount) AS max_total_amount,
+	MAX(passenger_count) AS max_total_passenger
+FROM 
+    yellow_taxi_trips 
+GROUP BY
+    CAST(tpep_dropoff_datetime AS DATE)
+ORDER BY 2 DESC
+
+-- Grouping by multiple columns
+SELECT
+    CAST(tpep_dropoff_datetime AS DATE) AS "day",
+    "DOLocationID",
+    COUNT(1) AS "count",
+    MAX(total_amount) AS "max_total_amount",
+    MAX(passenger_count) AS "max_passenger_count"
+FROM 
+    yellow_taxi_trips 
+GROUP BY
+    1, 2
+ORDER BY 1 ASC, 2 ASC
+LIMIT 100;
 
 
 ```
+
+### [Video 7: Introduction to GCP](https://youtu.be/18jIzE41fJ4?list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb)
+
+- GCP offers cloud servies.
+- Include range of hosted serviees for computem, storage, and application development that run on Google hardware.
+- Same infrastructure that Google uses internally for its end-user products, such as Google Search, Gmail, file storage, and YouTube.
+
+We will talk majorly about BigData and Storage & Database services.
+
+
+### [Video 8: Introduction Terraform: Concepts and Overview, a primer](https://youtu.be/s2bOYDCKl_M?list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb)
+
+- **What is Terraform?**  
+Terraform is an open-source tool that allows you to define and provision *infrastructure as code*. This means that you can define your infrastructure in a human-readable configuration file, and then use Terraform to create and manage that infrastructure.
+
+- **Why use Terraform?**
+  - **Reproducibility**: You can define your infrastructure in a configuration file, which makes it easy to reproduce your infrastructure in different environments.
+  - **Automation**: Terraform allows you to automate the creation and management of your infrastructure, which can save you time and reduce the risk of human error.
+  - **Collaboration**: Terraform configuration files can be version-controlled and shared, which makes it easy to collaborate with others on your infrastructure.
+
+- **How does Terraform work?**   
+Terraform uses a declarative language to define your infrastructure. This means that you tell Terraform what you want your infrastructure to look like, and Terraform figures out how to create it. Terraform then uses providers to interact with different cloud platforms and services.
+
+**Provider** allow you to communicate with the cloud provider, like AWS, GCP, Azure, etc. Code that allow terraform to interact with the cloud provider.
+
+- **Key Terraform commands**:
+
+```bash
+## defined the provider. Initializes a working directory containing Terraform configuration.
+terraform init
+
+## Generates an execution plan that shows the changes that will be made to your infrastructure if you apply the current configuration.
+terraform plan
+
+## Do what is in the tf file Creates or updates the infrastructure defined in your configuration.
+terraform apply
+
+## Remove everything defined in tf file. Destroys all of the infrastructure that was created by Terraform.
+terraform destroy
+```
+
+### [Video 9: Terraform Basics: Simple one file Terraform Deployment](https://www.youtube.com/watch?v=s2bOYDCKl_M&list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb&index=12)
+
+To install terraform for Ubuntu, refer to this [link](https://developer.hashicorp.com/terraform/install) and run the below commands
+
+```bash
+wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install terraform
+
+## To check if installed correctly
+terraform --version
+```
+
+We create Service account on GCP, which is never meant to be logged into. It is used to give permissions to the resources. We will create a bucket in GCP using terraform.
+Check this [website](https://registry.terraform.io/providers/hashicorp/google/latest/docs) for terraform google provider to create [main.tf](week_1/terrademo/main.tf) file.
+Check this [link](http://registry.terraform.io/providers/wiardvanrij/ipv4google/latest/docs/resources/storage_bucket) to create google cloud storage bucket.
+Before pushing to the remote repo always remember to include .gitignote file, for terraform refer to this [file](https://github.com/github/gitignore/blob/main/Terraform.gitignore). For specific region check this [link](https://cloud.google.com/compute/docs/regions-zones)
+
+main.tf file to create a bucket in GCP
+```
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "6.17.0"
+    }
+  }
+}
+
+provider "google" {
+  credentials = "./keys/my-creds.json"
+  project     = "hybrid-matrix-448616-b9"
+  region      = "ap-south-1"
+}
+
+resource "google_storage_bucket" "demo-bucket" {
+  name          = "hybrid-matrix-448616-b9"
+  location      = "US"
+  force_destroy = true
+
+  lifecycle_rule {
+    condition {
+      age = 1
+    }
+    action {
+      type = "AbortIncompleteMultipartUpload"
+    }
+  }
+}
+```
+
+```bash
+terraform fmt # to format the file
+
+terraform init # to initialize the terraform
+
+terraform plan # to check the plan
+
+terraform apply # to apply the plan
+
+terraform destroy # to destroy the resources
+```
+
+### [Video 10: Terraform Deployment with a Variables File](https://youtu.be/PBi0hHjLftk&list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb&index=13)
+
+```bash
+terraform apply # the bucket would be added to gcp, this would also create terraform.tfstate file 
+
+terraform destroy # the terraform.tfstate file would be deleted, the corresponding bucket would be deleted from gcp and would create terraform.tfstate.backup file
+```
+
+Check this for [terraform Bigquery dataset](https://registry.terraform.io/providers/hashicorp/google/latest/docs/resources/bigquery_dataset). This would add the dataset to the bigquery.
+
+main.tf file to add dataset to bigquery
+```
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "6.17.0"
+    }
+  }
+}
+
+provider "google" {
+  credentials = "./keys/my-creds.json"
+  project     = "hybrid-matrix-448616-b9"
+  region      = "ap-south-1"
+}
+
+resource "google_storage_bucket" "demo-bucket" {
+  name          = "hybrid-matrix-448616-b9"
+  location      = "US"
+  force_destroy = true
+
+  lifecycle_rule {
+    condition {
+      age = 1
+    }
+    action {
+      type = "AbortIncompleteMultipartUpload"
+    }
+  }
+}
+
+resource "google_bigquery_dataset" "demo_dataset" {
+  dataset_id = "demo_dataset"
+}
+```
+
+Creating a variables.tf file to add variables to the terraform file and using these vairables in corresponding modified main.tf file.
+```
+variable "credentials" {
+  description = "credentials"
+  default     = "./keys/my-creds.json"
+}
+
+variable "region_india" {
+  description = "Region"
+  default     = "asia-south1-c"
+}
+
+variable "region_us" {
+  description = "Region"
+  default     = "us-central1"
+}
+
+variable "project" {
+  description = "Project"
+  default     = "hybrid-matrix-448616-b9"
+}
+
+variable "location" {
+  description = "Project Location"
+  default     = "US"
+}
+
+variable "bq_dataset_name" {
+  description = "My BigQuery Dataset Name"
+  default     = "demo_dataset"
+}
+
+variable "gcs_bucket_name" {
+  description = "My Storage Bucket Name"
+  default     = "hybrid-matrix-448616-b9"
+}
+
+variable "gcs_storage_class" {
+  description = "Bucket Storage Class"
+  default     = "STANDARD"
+}
+```
+
+Modified main.tf file to include the variables
+```
+terraform {
+  required_providers {
+    google = {
+      source  = "hashicorp/google"
+      version = "6.17.0"
+    }
+  }
+}
+
+provider "google" {
+  credentials = file(var.credentials)
+  project     = var.project
+  region      = var.region_india
+}
+
+resource "google_storage_bucket" "demo-bucket" {
+  name          = var.gcs_bucket_name
+  location      = var.location
+  force_destroy = true
+
+  lifecycle_rule {
+    condition {
+      age = 1
+    }
+    action {
+      type = "AbortIncompleteMultipartUpload"
+    }
+  }
+}
+
+resource "google_bigquery_dataset" "demo_dataset" {
+  dataset_id = var.bq_dataset_name
+  location   = var.location
+}
+```
+
+```bash
+# run these on terminal
+terraform fmt # to format the file
+terraform plan # to check the plan
+terraform apply # to apply/deploy the plan
+terraform destroy # to destroy the resources
+```
+
+### [Video 11: GCP Cloud VM](https://youtu.be/ae-CV2KfoN0&list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb&index=14)
+
+How to setup an environment on GCP using instance.  
+We first need ssh key to login on the instance, we would use git bash. [Create SSH keys](https://cloud.google.com/compute/docs/connect/create-ssh-keys)
+
+```bash
+cd ~/.ssh
+ssh-keygen -t rsa -f ~/.ssh/gcp -C texnh # this would create gcp and gcp.pub file
+```
+
+Then we would create a VM instance on GCP, check this [link](https://cloud.google.com/compute/docs/instances/create-start-instance) to create an instance.  
+Then we would connect to the instance by adding the above ssh gcp.pub key to the metadata of the instance in GCP. This would create an VM with specified setup the external ip: 34.47.171.149. To ssh into VM machine use this command if you had setuped the password you would be prompted with that.
+
+Install anaconda using this [link](https://docs.anaconda.com/anaconda/install/) on the VM machine.
+
+```bash
+# -t for identity file, then name and the ip adress
+ssh -i ~/.ssh/gcp texnh@34.47.171.149
+
+htop # to check the resources
+
+# to download anaconda on VM
+wget https://repo.anaconda.com/archive/Anaconda3-2024.10-1-Linux-x86_64.sh 
+bash Anaconda3-2024.10-1-Linux-x86_64.sh
+
+# to install docker
+sudo apt-get update
+sudo apt-get install docker.io
+
+# to exit
+logout
+```
+
+Follow the below step for creating config file for ssh on your local machine
+
+```bash
+cd ~/.ssh
+code config
+
+# Add the below content to the file
+Host de-zoomcamp
+	Hostname 34.47.171.149
+	User texnh
+	IdentityFile ~/.ssh/gcp
+
+# Save the file and then run the below command to ssh into the VM
+ssh de-zoomcamp
+```
+
+
