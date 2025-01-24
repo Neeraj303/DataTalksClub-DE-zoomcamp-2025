@@ -5,3 +5,7 @@
 
 ## [Week 1](week_1): Docker-Terraform | [Homework 1](week_1/homework.md) | [HW1 Solution]()
 
+## Extra Resources
+- [Docker](https://docs.docker.com/get-started/)
+- [dbt Fundamentals Course](https://learn.getdbt.com/courses/dbt-fundamentals)
+- 
