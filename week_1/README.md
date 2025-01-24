@@ -585,18 +585,19 @@ How to setup an environment on GCP using instance.
 We first need ssh key to login on the instance, we would use git bash. [Create SSH keys](https://cloud.google.com/compute/docs/connect/create-ssh-keys)
 
 ```bash
+# On local machine
 cd ~/.ssh
 ssh-keygen -t rsa -f ~/.ssh/gcp -C texnh # this would create gcp and gcp.pub file
 ```
 
 Then we would create a VM instance on GCP, check this [link](https://cloud.google.com/compute/docs/instances/create-start-instance) to create an instance.  
-Then we would connect to the instance by adding the above ssh gcp.pub key to the metadata of the instance in GCP. This would create an VM with specified setup the external ip: 34.47.171.149. To ssh into VM machine use this command if you had setuped the password you would be prompted with that.
+Then we would connect to the instance by adding the above ssh gcp.pub key to the metadata of the instance in GCP. This would create an VM with specified setup the external ip: 35.200.172.97. To ssh into VM machine use this command if you had setuped the password you would be prompted with that.
 
 Install anaconda using this [link](https://docs.anaconda.com/anaconda/install/) on the VM machine.
 
 ```bash
-# -t for identity file, then name and the ip adress
-ssh -i ~/.ssh/gcp texnh@34.47.171.149
+# -i for identity file, then name and the ip adress
+ssh -i ~/.ssh/gcp texnh@35.200.172.97
 
 htop # to check the resources
 
@@ -620,12 +621,76 @@ code config
 
 # Add the below content to the file
 Host de-zoomcamp
-	Hostname 34.47.171.149
+	Hostname 35.200.172.97
 	User texnh
 	IdentityFile ~/.ssh/gcp
 
 # Save the file and then run the below command to ssh into the VM
 ssh de-zoomcamp
 ```
+Follow the below steps on GCP VM
 
+Check this [link](https://github.com/sindresorhus/guides/blob/main/docker-without-sudo.md) for docker without sudo.   
+To install docker compose check this [link](https://github.com/docker/compose/releases). I have installed v2.32.4 docker-compose-linux-x86_64
 
+```bash
+# the below command would lead to error of permission denied
+docker run hello-world 
+
+# follow the below commands to run docker without sudo
+sudo groupadd docker
+sudo gpasswd -a $USER docker
+sudo service docker restart
+
+# then logout of the VM and then login again
+docker run hello-world
+docker run -it ubuntu bash
+
+# clone the repo 
+git clone https://github.com/DataTalksClub/data-engineering-zoomcamp.git
+
+# to install docker-compose
+mkdir bin
+cd bin
+wget https://github.com/docker/compose/releases/download/v2.32.4/docker-compose-linux-x86_64 -O docker-compose
+chmod +x docker-compose
+./docker-compose version
+
+# to make docker-compose available in all the terminal
+vi ~/.bashrc
+echo "export PATH=\"\${HOME}/bin:\$PATH\"" >> ~/.bashrc
+source ~/.bashrc
+which docker-compose
+docker-compose version
+
+cd data-engineering-zoomcamp/01-docker-terraform/2_docker_sql
+docker-compose up -d
+docker ps
+
+# now install pgcli
+conda install -c conda-forge pgcli
+
+pgcli -h localhost -p 5432 -u root -d ny_taxi
+\dt # to see the tables
+```
+
+To access postgres locally go the VScode ports on which you have de-zoomcamp host connection then add 5432 to it. Then on your local machine run the below command. Similarly add 8080 port then paste localhost:8080 on your browser to access pgadmin.
+
+```bash
+pgcli -h localhost -p 5432 -u root -d ny_taxi
+
+cd data-engineering-zoomcamp/01-docker-terraform/2_docker_sql
+wget https://github.com/DataTalksClub/nyc-tlc-data/releases/download/yellow/yellow_tripdata_2021-01.csv.gz 
+gunzip yellow_tripdata_2021-01.csv.gz
+conda install anaconda::psycopg2
+
+jupyter notebook # this would not open brave so use google chrome
+# then open upload-data.ipynb and run the cells
+
+# to install terraform
+wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+sudo apt update && sudo apt install terraform
+
+cd 1_terraform_gcp/
+```
