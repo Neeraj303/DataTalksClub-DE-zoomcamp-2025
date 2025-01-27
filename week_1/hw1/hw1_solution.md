@@ -215,7 +215,8 @@ FROM (
 ) AS foo
 
 ```
-Correct answer is b) 104,802;  198,924;  109,603;  27,678;  35,189
+**Answer**  
+b) 104,802;  198,924;  109,603;  27,678;  35,189
 
 ## Question 4. Longest trip for each day
 
@@ -288,7 +289,7 @@ WHERE "LocationID" IN (
 )
 ```
 
-**Answer**
+**Answer**  
 a) East Harlem North, East Harlem South, Morningside Heights
 
 ## Question 6. Largest tip
@@ -323,7 +324,7 @@ SELECT "DOLocationID" FROM cte
 ORDER BY "tip_amount" DESC 
 LIMIT 1)
 ```
-**Answer**
+**Answer**  
 b) JFK Airport
 
 ## Terraform
@@ -351,7 +352,7 @@ Answers:
 - terraform init, terraform apply -auto-approve, terraform destroy
 - terraform import, terraform apply -y, terraform rm
 
-**Answer**
+**Answer**  
 d) terraform init, terraform apply -auto-approve, terraform destroy
 
 ## Submitting the solutions
