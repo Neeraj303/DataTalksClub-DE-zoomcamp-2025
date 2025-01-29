@@ -1,5 +1,5 @@
 
-## [Week 1 Official Github](https://github.com/DataTalksClub/data-engineering-zoomcamp/tree/main/01-docker-terraform): Docker-Terraform | [Homework 1](homework.md) | [HW1 Solution]()
+## [Week 1 Official Github](https://github.com/DataTalksClub/data-engineering-zoomcamp/tree/main/01-docker-terraform): Docker-Terraform | [Homework 1](homework.md) | [HW1 Solution](hw1/hw1_solution.md)
 
 ### [Video 1: Intro to Docker](https://youtu.be/EYNwNlOrpr0&list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb&index=4)
 
