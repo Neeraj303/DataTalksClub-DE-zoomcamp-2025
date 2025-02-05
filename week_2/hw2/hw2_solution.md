@@ -37,6 +37,8 @@ Flows used:
 - 364.7 MB
 - 692.6 MB
 
+![file size](ans1.png)
+
 **Answer:**  
 A) 128.3 MB
 
