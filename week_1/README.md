@@ -169,7 +169,7 @@ docker run -it \
 
 ### [Video 5: Running Postgres and pgAdmin with Docker-Compose](https://youtu.be/hKI6PkPhpa0?list=PL3MmuxUbc_hJed7dXYoJw8DoCuVHhGEQb)
 
-We will make a yaml file to run the postgres and pgadmin in one go. We will use Docker Compose to run multiple containers at once. 
+We will make a yaml file to run the postgres and pgadmin in one go. We will use Docker Compose to run multiple containers at once. So that we would not require network to connect them.
 
 ```bash
 # To run the docker compose file
