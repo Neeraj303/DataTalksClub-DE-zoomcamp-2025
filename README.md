@@ -31,5 +31,5 @@ graph TD;
 - [DevOps with Docker](https://devopswithdocker.com/)
 - [Intro to Big Data: IIT Madras](https://www.youtube.com/playlist?list=PLZ2ps__7DhBZYtBcr1ERnw7Y1QGs7bI3y)
 - [Kestra Tutorial](https://kestra.io/docs/tutorial)
-- [dbt Fundamentals Course](https://learn.getdbt.com/courses/dbt-fundamentals) | [My notes](extra/dbt_fundamentals/README.md)
+- [dbt Fundamentals Course](https://learn.getdbt.com/courses/dbt-fundamentals)
 - 
