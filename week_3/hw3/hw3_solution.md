@@ -1,18 +1,34 @@
 ## Module 3 Homework
 
-ATTENTION: At the end of the submission form, you will be required to include a link to your GitHub repository or other public code-hosting site. 
-This repository should contain your code for solving the homework. If your solution includes code that is not in file format (such as SQL queries or 
-shell commands), please include these directly in the README file of your repository.
+We will first create a new GCS bucket named `dezoomcamp_hw3_2025_texnh` and dataset named `module3_hw3` in BQ using terraform [main.tf](setup/main.tf) file. Remember to give a unique bucket name.
+
+```bash
+terraform init
+terraform plan
+terraform apply
+```
+
+
+_For BQ setup_
+```
+Project Name (hybrid-matrix-448616-b9)
+├── Dataset Name (module3_hw3)
+|   └── Table Name ()
+```
+
+I have tired using the [python file](setup/python_v1.py) provided in the homework, follow the pre-setup before running the python file.
+
+```bash
+pip install google-cloud-storage
+python3 python_v1.py
+```
+
 
 <b><u>Important Note:</b></u> <p> For this homework we will be using the Yellow Taxi Trip Records for **January 2024 - June 2024 NOT the entire year of data** 
 Parquet Files from the New York
 City Taxi Data found here: </br> https://www.nyc.gov/site/tlc/about/tlc-trip-record-data.page </br>
 If you are using orchestration such as Kestra, Mage, Airflow or Prefect etc. do not load the data into Big Query using the orchestrator.</br> 
 Stop with loading the files into a bucket. </br></br>
-
-**Load Script:** You can manually download the parquet files and upload them to your GCS Bucket or you can use the linked script [here](./load_yellow_taxi_data.py):<br>
-You will simply need to generate a Service Account with GCS Admin Priveleges or be authenticated with the Google SDK and update the bucket name in the script to the name of your bucket<br>
-Nothing is fool proof so make sure that all 6 files show in your GCS Bucket before begining.</br><br>
 
 <u>NOTE:</u> You will need to use the PARQUET option files when creating an External Table</br>
 
@@ -21,6 +37,22 @@ Create an external table using the Yellow Taxi Trip Records. </br>
 Create a (regular/materialized) table in BQ using the Yellow Taxi Trip Records (do not partition or cluster this table). </br>
 </p>
 
+This below command would create a table named `external_yellow_tripdata` in the `module3_hw3` dataset in BigQuery in project `hybrid-matrix-448616-b9`. This dataset is not stored inside BigQuery, but rather it is stored in Google Cloud Storage, so it does not have any storage cost associated with it.
+
+```sql
+-- Creating external table referring to gcs path
+CREATE OR REPLACE EXTERNAL TABLE `hybrid-matrix-448616-b9.module3_hw3.external_yellow_tripdata`
+OPTIONS (
+  format = 'PARQUET',
+  uris = ['gs://dezoomcamp_hw3_2025_texnh/yellow_tripdata_2024-*.parquet']
+);
+
+-- For the below query the data is copied from GCS to BigQuery.
+-- Create a non partitioned table from external table
+CREATE OR REPLACE TABLE hybrid-matrix-448616-b9.module3_hw3.yellow_tripdata_non_partitoned AS
+SELECT * FROM hybrid-matrix-448616-b9.module3_hw3.external_yellow_tripdata;
+```
+
 ## Question 1:
 Question 1: What is count of records for the 2024 Yellow Taxi Data?
 - 65,623
@@ -28,6 +60,12 @@ Question 1: What is count of records for the 2024 Yellow Taxi Data?
 - 20,332,093
 - 85,431,289
 
+```sql
+-- Check yello trip data
+SELECT COUNT(1) FROM hybrid-matrix-448616-b9.module3_hw3.external_yellow_tripdata;
+```
+**Answer**   
+c) 20,332,093
 
 ## Question 2:
 Write a query to count the distinct number of PULocationIDs for the entire dataset on both the tables.</br> 
@@ -38,6 +76,19 @@ What is the **estimated amount** of data that will be read when this query is ex
 - 2.14 GB for the External Table and 0MB for the Materialized Table
 - 0 MB for the External Table and 0MB for the Materialized Table
 
+After running the below query go to `JOB INFORMATION` and check the `Bytes Processed` for the query.
+
+```sql
+-- Check distinct PULocationID for external table
+SELECT DISTINCT PULocationID FROM hybrid-matrix-448616-b9.module3_hw3.external_yellow_tripdata; 
+
+-- Check distinct PULocationID for non-partitioned table
+SELECT DISTINCT PULocationID FROM hybrid-matrix-448616-b9.module3_hw3.yellow_tripdata_non_partitoned;
+```
+
+**Answer**   
+B) 0 MB for the External Table and 155.12 MB for the Materialized Table
+
 ## Question 3:
 Write a query to retrieve the PULocationID from the table (not the external table) in BigQuery. Now write a query to retrieve the PULocationID and DOLocationID on the same table. Why are the estimated number of Bytes different?
 - BigQuery is a columnar database, and it only scans the specific columns requested in the query. Querying two columns (PULocationID, DOLocationID) requires 
@@ -47,6 +98,16 @@ doubling the estimated bytes processed.
 - BigQuery automatically caches the first queried column, so adding a second column increases processing time but does not affect the estimated bytes scanned.
 - When selecting multiple columns, BigQuery performs an implicit join operation between them, increasing the estimated bytes processed
 
+```sql
+-- Bytes processed 155.12 MB
+SELECT PULocationID FROM hybrid-matrix-448616-b9.module3_hw3.yellow_tripdata_non_partitoned;
+
+--Bytes processed: 310.24 MB
+SELECT PULocationID, DOLocationID FROM hybrid-matrix-448616-b9.module3_hw3.yellow_tripdata_non_partitoned;
+```
+**ANSWER**  
+a) BigQuery is a columnar database, and it only scans the specific columns requested in the query. Querying two columns (PULocationID, DOLocationID) requires
+
 ## Question 4:
 How many records have a fare_amount of 0?
 - 128,210
@@ -54,12 +115,36 @@ How many records have a fare_amount of 0?
 - 20,188,016
 - 8,333
 
+```sql
+-- Check fare_amount of 0
+SELECT COUNT(1) FROM hybrid-matrix-448616-b9.module3_hw3.yellow_tripdata_non_partitoned 
+WHERE fare_amount=0;
+```
+**Answer**  
+D) 8,333
+
 ## Question 5:
 What is the best strategy to make an optimized table in Big Query if your query will always filter based on tpep_dropoff_datetime and order the results by VendorID (Create a new table with this strategy)
 - Partition by tpep_dropoff_datetime and Cluster on VendorID
 - Cluster on by tpep_dropoff_datetime and Cluster on VendorID
 - Cluster on tpep_dropoff_datetime Partition by VendorID
 - Partition by tpep_dropoff_datetime and Partition by VendorID
+
+```sql
+-- make a partitioned data
+CREATE OR REPLACE TABLE hybrid-matrix-448616-b9.module3_hw3.yellow_tripdata_partitoned 
+PARTITION BY DATE(tpep_pickup_datetime) AS
+SELECT * FROM hybrid-matrix-448616-b9.module3_hw3.external_yellow_tripdata;
+
+-- make a partitioned, clustered data
+CREATE OR REPLACE TABLE hybrid-matrix-448616-b9.module3_hw3.yellow_tripdata_partitoned_clustered
+PARTITION BY DATE(tpep_pickup_datetime)
+CLUSTER BY VendorID AS
+SELECT * FROM hybrid-matrix-448616-b9.module3_hw3.external_yellow_tripdata;
+```
+
+**Answer**  
+A) Partition by tpep_dropoff_datetime and Cluster on VendorID
 
 
 ## Question 6:
@@ -75,6 +160,21 @@ Choose the answer which most closely matches.</br>
 - 5.87 MB for non-partitioned table and 0 MB for the partitioned table
 - 310.31 MB for non-partitioned table and 285.64 MB for the partitioned table
 
+```sql
+-- Query the materialized non partitioned table
+-- Bytes processed: 310.24 MB
+SELECT DISTINCT VendorID FROM hybrid-matrix-448616-b9.module3_hw3.yellow_tripdata_non_partitoned
+WHERE DATE(tpep_dropoff_datetime) >= '2024-03-01' AND DATE(tpep_dropoff_datetime) <= '2024-03-15';
+
+--Query the materialized partioned table
+-- Bytes processed 28.83 MB
+SELECT DISTINCT VendorID FROM hybrid-matrix-448616-b9.module3_hw3.yellow_tripdata_partitoned_clustered
+WHERE DATE(tpep_dropoff_datetime) >= '2024-03-01' AND DATE(tpep_dropoff_datetime) <= '2024-03-15';
+```
+
+**Answer**  
+B) 310.24 MB for non-partitioned table and 26.84 MB for the partitioned table
+
 
 ## Question 7: 
 Where is the data stored in the External Table you created?
@@ -84,11 +184,16 @@ Where is the data stored in the External Table you created?
 - GCP Bucket
 - Big Table
 
+**Answer**  
+C) GCP Bucket
+
 ## Question 8:
 It is best practice in Big Query to always cluster your data:
 - True
 - False
 
+**Answer**
+B) False
 
 ## (Bonus: Not worth points) Question 9:
 No Points: Write a `SELECT count(*)` query FROM the materialized table you created. How many bytes does it estimate will be read? Why?
@@ -97,3 +202,4 @@ No Points: Write a `SELECT count(*)` query FROM the materialized table you creat
 ## Submitting the solutions
 
 Form for submitting: https://courses.datatalks.club/de-zoomcamp-2025/homework/hw3
+
