@@ -1,0 +1,68 @@
+-- Query public available table
+SELECT station_id, name FROM
+    bigquery-public-data.new_york_citibike.citibike_stations
+LIMIT 100;
+
+
+-- Creating external table referring to gcs path
+CREATE OR REPLACE EXTERNAL TABLE `hybrid-matrix-448616-b9.demo_dataset.external_yellow_tripdata`
+OPTIONS (
+  format = 'CSV',
+  uris = ['gs://hybrid-matrix-448616-b9-kestra/yellow_tripdata_2019-*.csv', 'gs://hybrid-matrix-448616-b9-kestra/yellow_tripdata_2020-*.csv']
+);
+
+-- Check yello trip data
+SELECT * FROM hybrid-matrix-448616-b9.demo_dataset.external_yellow_tripdata limit 10;
+
+-- For the below query the data is copied from GCS to BigQuery.
+-- Create a non partitioned table from external table
+CREATE OR REPLACE TABLE hybrid-matrix-448616-b9.demo_dataset.yellow_tripdata_non_partitoned AS
+SELECT * FROM hybrid-matrix-448616-b9.demo_dataset.external_yellow_tripdata;
+
+-- Create a partitioned table from external table, this would have break in the logo
+CREATE OR REPLACE TABLE hybrid-matrix-448616-b9.demo_dataset.yellow_tripdata_partitoned
+PARTITION BY
+  DATE(tpep_pickup_datetime) AS
+SELECT * FROM hybrid-matrix-448616-b9.demo_dataset.external_yellow_tripdata;
+
+-- Impact of partition
+-- Scanning 1.6GB of data
+SELECT DISTINCT(VendorID)
+FROM hybrid-matrix-448616-b9.demo_dataset.yellow_tripdata_non_partitoned
+WHERE DATE(tpep_pickup_datetime) BETWEEN '2019-06-01' AND '2019-06-30';
+
+-- Scanning ~106 MB of DATA
+SELECT DISTINCT(VendorID)
+FROM hybrid-matrix-448616-b9.demo_dataset.yellow_tripdata_partitoned
+WHERE DATE(tpep_pickup_datetime) BETWEEN '2019-06-01' AND '2019-06-30';
+
+-- Let's look into the partitons
+SELECT table_name, partition_id, total_rows
+FROM `demo_dataset.INFORMATION_SCHEMA.PARTITIONS`
+WHERE table_name = 'yellow_tripdata_partitoned'
+ORDER BY total_rows DESC;
+
+-- Let's look into the partitons
+SELECT table_name, partition_id, total_rows
+FROM `demo_dataset.INFORMATION_SCHEMA.PARTITIONS`
+WHERE table_name = 'yellow_tripdata_partitoned'
+ORDER BY total_rows DESC;
+
+-- Creating a partition and cluster table
+CREATE OR REPLACE TABLE hybrid-matrix-448616-b9.demo_dataset.yellow_tripdata_partitoned_clustered
+PARTITION BY DATE(tpep_pickup_datetime)
+CLUSTER BY VendorID AS
+SELECT * FROM hybrid-matrix-448616-b9.demo_dataset.external_yellow_tripdata;
+
+-- Query scans 1.1 GB
+SELECT count(*) as trips
+FROM hybrid-matrix-448616-b9.demo_dataset.yellow_tripdata_partitoned
+WHERE DATE(tpep_pickup_datetime) BETWEEN '2019-06-01' AND '2020-12-31'
+  AND VendorID=1;
+
+-- Query scans 864.5 MB
+SELECT count(*) as trips
+FROM hybrid-matrix-448616-b9.demo_dataset.yellow_tripdata_partitoned_clustered
+WHERE DATE(tpep_pickup_datetime) BETWEEN '2019-06-01' AND '2020-12-31'
+  AND VendorID=1;
+

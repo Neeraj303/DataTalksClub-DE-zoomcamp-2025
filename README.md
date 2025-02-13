@@ -19,6 +19,7 @@ graph TD;
 
 ## [Week 2](week_2): Kestra | [Homework 2](week_2/homework.md) | [HW2 Solution](week_2/hw2/hw2_solution.md)
 
+## [Week 3](week_3): Workflow Orchestration | [Homework 3](week_3/homework.md) | [HW3 Solution](week_3/hw3/hw3_solution.md)
 
 
 
