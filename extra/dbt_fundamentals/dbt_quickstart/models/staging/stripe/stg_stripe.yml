@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: stg_stripe__payments
+    description: Staged payments data from our jaffle shop app.
+    columns:
+      - name: payment_id
+        description: The primary key for customers.
+        tests:
+          - unique
+          - not_null
+      - name: payment_method
+        description: '{{ doc("payments_payment_method") }}'
+        tests:
+          - accepted_values:
+              values: ['credit_card', 'coupon', 'bank_transfer', 'gift_card']
+      - name: status
+        description: '{{ doc("payments_status") }}'
+        tests:
+          - accepted_values:
+              values: ['success', 'fail']
