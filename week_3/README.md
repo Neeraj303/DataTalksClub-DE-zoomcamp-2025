@@ -29,7 +29,7 @@ _Hands on BigQuery_:
 ```
 Project Name (hybrid-matrix-448616-b9)
 ├── Dataset Name (demo_dataset)
-    └── Table Name (yellow_tripdata_non_partitoned, yellow_tripdata_partitoned, ..)
+|   └── Table Name (yellow_tripdata_non_partitoned, yellow_tripdata_partitoned, ..)
 ├── Dataset Name (kestra_zoomcamp)
    └── Table Name (green_tripdata, ....)
 ```
