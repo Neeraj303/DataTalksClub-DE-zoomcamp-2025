@@ -24,6 +24,13 @@ graph TD;
 
 ## [dlt Workshop](dlt_workshop) | [DLT Homework](dlt_workshop/dlt_homework.md) | [DLT HW Solution](dlt_workshop/hw_dlt/hw_dlt.md)
 
+## [Week 4](week_4): Analytics Engineering | [Homework 4](week_4/homework.md) | [HW4 Solution](week_4/hw4/hw4_solution.md)
+
+## [Week 5](week_5): Batch Processing | [Homework 5](week_5/homework.md) | [HW5 Solution](week_5/hw5/hw5_solution.md)
+
+## [Week 6](week_6): Stream Processing | [Homework 6](week_6/homework.md) | [HW6 Solution](week_6/hw6/hw6_solution.md)
+
+## [Project](project.md)
 
 ## Extra Resources
 - [Basics of databases](https://tikape.mooc.fi/kevat-2025/tehtavat/) | [SQL Trainer](https://sqltrainer.withmooc.fi/#55)
