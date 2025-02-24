@@ -386,7 +386,7 @@ github repo
 |        └── jaffle_shop   
 ```
 
-everything inside our `marketing` folder need to converted/materalized into table, for that we modify our `dbt_project.yml` file to include this:
+everything inside our `marts` folder need to converted/materalized into table, for that we modify our `dbt_project.yml` file to include this:
 
 ```yaml
 name: 'jaffle_shop'
@@ -500,7 +500,7 @@ models/staging
     └── stg_stripe__payments.sql
 ```
 
-We create `models/staging/jaffle_shop/src_jaffle_shop.yml` file:  
+We create `models/staging/jaffle_shop/_jaffle_shop__sources.yml` file:  
 By default, `schema` (specific to datawarehouse) will be the same as `name` (specific to dbt). Add `schema` only if you want to use a source name that differs from the existing schema. the yml file.  
 ```yaml
 version: 2
