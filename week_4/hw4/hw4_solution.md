@@ -50,6 +50,11 @@ from {{ source('raw_nyc_tripdata', 'ext_green_taxi' ) }}
 - `select * from myproject.my_nyc_tripdata.ext_green_taxi`
 - `select * from dtc_zoomcamp_2025.raw_nyc_tripdata.green_taxi`
 
+✅ **Answer**:
+```sql
+select * from `myproject`.`raw_nyc_tripdata`.`ext_green_taxi`
+```
+
 
 ### Question 2: dbt Variables & Dynamic Models
 
@@ -72,6 +77,9 @@ What would you change to accomplish that in a such way that command line argumen
 - Update the WHERE clause to `pickup_datetime >= CURRENT_DATE - INTERVAL '{{ var("days_back", env_var("DAYS_BACK", "30")) }}' DAY`
 - Update the WHERE clause to `pickup_datetime >= CURRENT_DATE - INTERVAL '{{ env_var("DAYS_BACK", var("days_back", "30")) }}' DAY`
 
+✅ **Answer**:
+
+Update the WHERE clause to `pickup_datetime >= CURRENT_DATE - INTERVAL '{{ env_var("DAYS_BACK", "30") }}' DAY`
 
 ### Question 3: dbt Data Lineage and Execution
 
@@ -86,6 +94,9 @@ Select the option that does **NOT** apply for materializing `fct_taxi_monthly_zo
 - `dbt run --select +models/core/fct_taxi_monthly_zone_revenue.sql`
 - `dbt run --select +models/core/`
 - `dbt run --select models/staging/+`
+
+✅ **Answer**:
+dbt run --select models/staging/+ since dim_zones would not have materialized yet
 
 
 ### Question 4: dbt Macros and Jinja
@@ -136,6 +147,9 @@ So, without any further do, let's get started...
 You might want to add some new dimensions `year` (e.g.: 2019, 2020), `quarter` (1, 2, 3, 4), `year_quarter` (e.g.: `2019/Q1`, `2019-Q2`), and `month` (e.g.: 1, 2, ..., 12), **extracted from pickup_datetime**, to your `fct_taxi_trips` OR `dim_taxi_trips.sql` models to facilitate filtering your queries
 
 
+✅ **Answer**: 1, 3, 5
+The first statement is accurate; the absence of that environment variable's value would prevent the code from compiling. The second statement is inaccurate; if the environment variable's value is missing, it does not impact scenarios where model_type == 'core'. Moreover, when model_type is not 'core', it can default to using target_env_var in the event that stging_env_var is unset. The third through fifth statements are correct as they align with the macro logic.
+
 ### Question 5: Taxi Quarterly Revenue Growth
 
 1. Create a new model `fct_taxi_trips_quarterly_revenue.sql`
@@ -153,6 +167,50 @@ Considering the YoY Growth in 2020, which were the yearly quarters with the best
 - green: {best: 2020/Q1, worst: 2020/Q2}, yellow: {best: 2020/Q3, worst: 2020/Q4}
 
 
+✅ **Answer**: green: {best: 2020/Q1, worst: 2020/Q2}, yellow: {best: 2020/Q1, worst: 2020/Q2}
+
+corresponding model:
+```sql
+{{
+    config(
+        materialized='table'
+    )
+}}
+
+with temp as (
+    SELECT YEAR(pickup_datetime) AS year, 
+EXTRACT(QUARTER FROM pickup_datetime) AS quarter, service_type, total_amount
+    from {{ ref('fact_trips') }}
+),
+grouped as (
+    select service_type, year, quarter, sum(total_amount) as total_amount from temp
+group by service_type, year, quarter
+)
+SELECT 
+    service_type,
+    year,
+    quarter,
+    total_amount,
+    LAG(total_amount) OVER (
+        PARTITION BY service_type, quarter ORDER BY year
+    ) AS prev_year_total_amount,
+    CASE 
+        WHEN LAG(total_amount) OVER (
+            PARTITION BY service_type, quarter ORDER BY year
+        ) = 0 THEN NULL  -- Avoid division by zero
+        ELSE ROUND(
+            (total_amount - LAG(total_amount) OVER (
+                PARTITION BY service_type, quarter ORDER BY year
+            )) / NULLIF(LAG(total_amount) OVER (
+                PARTITION BY service_type, quarter ORDER BY year
+            ), 0) * 100, 2
+        )
+    END AS yoy_percentage_change
+FROM grouped
+ORDER BY service_type, year, quarter
+```
+
+
 ### Question 6: P97/P95/P90 Taxi Monthly Fare
 
 1. Create a new model `fct_taxi_trips_monthly_fare_p95.sql`
@@ -166,6 +224,31 @@ Now, what are the values of `p97`, `p95`, `p90` for Green Taxi and Yellow Taxi, 
 - green: {p97: 40.0, p95: 33.0, p90: 24.5}, yellow: {p97: 52.0, p95: 37.0, p90: 25.5}
 - green: {p97: 40.0, p95: 33.0, p90: 24.5}, yellow: {p97: 31.5, p95: 25.5, p90: 19.0}
 - green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 52.0, p95: 25.5, p90: 19.0}
+
+✅ **Answer**: green: {p97: 55.0, p95: 45.0, p90: 26.5}, yellow: {p97: 31.5, p95: 25.5, p90: 19.0}
+
+```sql
+{{
+    config(materialized='view')
+}}
+
+--create a temp table to store the data
+with temp as (
+    SELECT EXTRACT(YEAR FROM pickup_datetime) AS year, 
+    EXTRACT(MONTH FROM pickup_datetime) AS month, 
+    service_type, fare_amount FROM
+    {{ ref('fact_trips') }}  --reference the core model
+    where fare_amount > 0 and trip_distance > 0 and payment_type_description in ('Cash', 'Credit card')
+)
+select service_type,
+    year,
+    month,
+    PERCENTILE_CONT(fare_amount, 0.90) OVER (PARTITION BY service_type, year, month) AS p90,
+    PERCENTILE_CONT(fare_amount, 0.95) OVER (PARTITION BY service_type, year, month) AS p95,
+    PERCENTILE_CONT(fare_amount, 0.97) OVER (PARTITION BY service_type, year, month) AS p97
+    from temp where year = 2020 and month = 4
+    order by service_type, year, month
+```
 
 
 ### Question 7: Top #Nth longest P90 travel time Location for FHV
@@ -187,6 +270,34 @@ For the Trips that **respectively** started from `Newark Airport`, `SoHo`, and `
 - LaGuardia Airport, Saint Albans, Howard Beach
 - LaGuardia Airport, Rosedale, Bath Beach
 - LaGuardia Airport, Yorkville East, Greenpoint
+
+✅ **Answer**: LaGuardia Airport, Chinatown, Garment Distric
+
+`staging.sql`
+```sql
+{{
+    config(materialized='view')
+}}
+
+{{ config(materialized='view') }}
+
+with tripdata as 
+(
+  select *,
+  from {{ source('staging','fhv_tripdata') }}
+  where Dispatching_base_num is not null 
+)
+select
+    unique_row_id,
+    Dispatching_base_num,
+    cast(Pickup_datetime as timestamp) as pickup_datetime,
+    cast(DropOff_datetime as timestamp) as dropoff_datetime,
+    {{ dbt.safe_cast("PULocationID", api.Column.translate_type("integer")) }} as pickup_locationid,
+    {{ dbt.safe_cast("DOLocationID", api.Column.translate_type("integer")) }} as dropoff_locationid,
+    SR_Flag
+from tripdata
+```
+
 
 
 ## Submitting the solutions
